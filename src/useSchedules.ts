@@ -1,10 +1,21 @@
 import { useState, useEffect } from 'react'
 import { ref as dbRef, onValue, set as dbSet } from 'firebase/database'
-import type { Match } from './types'
+import type { Match, Category } from './types'
 import { db, isConfigured } from './firebase'
 
 const STORAGE_KEY = 'sport_schedules'
 const DB_PATH = 'schedules'
+
+// One-time migration: convert old "Boys"/"Girls" values to "Male"/"Female"
+function migrateCategory(raw: string): Category {
+  if (raw === 'Boys') return 'Male'
+  if (raw === 'Girls') return 'Female'
+  return raw as Category
+}
+
+function migrateMatches(raw: unknown[]): Match[] {
+  return (raw as Match[]).map(m => ({ ...m, category: migrateCategory(m.category) }))
+}
 
 export function useSchedules() {
   const [matches, setMatches] = useState<Match[]>([])
@@ -19,14 +30,24 @@ export function useSchedules() {
         schedulesRef,
         snapshot => {
           const val = snapshot.val() as Record<string, Match> | null
-          const loaded = val
-            ? (Object.values(val) as Match[]).sort((a, b) => a.id - b.id)
-            : []
+          const raw = val ? Object.values(val).sort((a, b) => a.id - b.id) : []
+          const loaded = migrateMatches(raw)
+
           setMatches(loaded)
           localStorage.setItem(STORAGE_KEY, JSON.stringify(loaded))
           setReady(true)
+
+          // Write migrated data back if any records were changed
+          const hadOldValues = raw.some(m => m.category === ('Boys' as string) || m.category === ('Girls' as string))
+          if (hadOldValues) {
+            const obj = loaded.reduce<Record<string, Match>>((acc, m) => {
+              acc[String(m.id)] = m
+              return acc
+            }, {})
+            dbSet(schedulesRef, obj).catch(() => {})
+          }
         },
-        () => loadLocal(),   // Firebase error → fall back to local data
+        () => loadLocal(),
       )
       return unsubscribe
     }
@@ -36,17 +57,19 @@ export function useSchedules() {
       const stored = localStorage.getItem(STORAGE_KEY)
       if (stored) {
         try {
-          setMatches(JSON.parse(stored) as Match[])
+          const loaded = migrateMatches(JSON.parse(stored) as unknown[])
+          setMatches(loaded)
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(loaded))
           setReady(true)
           return
-        } catch { /* corrupt data, fall through */ }
+        } catch { /* corrupt — fall through */ }
       }
       fetch('/data.json')
         .then(async r => {
           if (!r.ok) return
           const data = (await r.json()) as unknown
           if (Array.isArray(data) && data.length > 0) {
-            const loaded = data as Match[]
+            const loaded = migrateMatches(data)
             setMatches(loaded)
             localStorage.setItem(STORAGE_KEY, JSON.stringify(loaded))
           }
@@ -58,7 +81,6 @@ export function useSchedules() {
     loadLocal()
   }, [])
 
-  // Persist to localStorage always; also write to Firebase when configured.
   async function persist(data: Match[]) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
     if (!isConfigured || !db) return
