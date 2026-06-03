@@ -19,8 +19,8 @@ const SPORT_PILL: Record<string, string> = {
 }
 
 const CATEGORY_PILL: Record<string, string> = {
-  Boys:  'bg-sky-50 text-sky-700',
-  Girls: 'bg-pink-50 text-pink-700',
+  Male:   'bg-sky-50 text-sky-700',
+  Female: 'bg-pink-50 text-pink-700',
 }
 
 function formatTime(time: string) {

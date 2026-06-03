@@ -7,16 +7,16 @@ import ScheduleList from './components/ScheduleList'
 import CalendarView from './components/CalendarView'
 
 const FILTER_OPTIONS: { value: FilterOption; label: string }[] = [
-  { value: 'All',              label: 'All' },
-  { value: 'Volleyball Boys',  label: '🏐 Volleyball Boys' },
-  { value: 'Volleyball Girls', label: '🏐 Volleyball Girls' },
-  { value: 'Football Boys',    label: '⚽ Football Boys' },
-  { value: 'Football Girls',   label: '⚽ Football Girls' },
+  { value: 'All',                label: 'All' },
+  { value: 'Volleyball Male',    label: '🏐 Volleyball Male' },
+  { value: 'Volleyball Female',  label: '🏐 Volleyball Female' },
+  { value: 'Football Male',      label: '⚽ Football Male' },
+  { value: 'Football Female',    label: '⚽ Football Female' },
 ]
 
 export default function App() {
   const { matches, ready, syncing, addMatch, updateMatch, deleteMatch } = useSchedules()
-  const [mainView, setMainView]         = useState<'list' | 'calendar'>('list')
+  const [mainView, setMainView]         = useState<'list' | 'calendar'>('calendar')
   const [formOpen, setFormOpen]         = useState(false)
   const [editingMatch, setEditingMatch] = useState<Match | null>(null)
   const [search, setSearch]             = useState('')
@@ -82,37 +82,38 @@ export default function App() {
       <header className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
         <div className="max-w-6xl mx-auto px-4">
 
-          {/* Top row */}
+          {/* Top row: logo + badge + stats */}
           <div className="flex items-center justify-between py-3 gap-3">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-lg shadow-sm shrink-0">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-base sm:text-lg shadow-sm shrink-0">
                 🏆
               </div>
               <div className="min-w-0">
-                <h1 className="font-bold text-gray-900 text-base leading-tight truncate">
+                <h1 className="font-bold text-gray-900 text-sm sm:text-base leading-tight truncate">
                   Sports Tournament Schedule
                 </h1>
-                <p className="text-gray-400 text-xs">School &amp; Event Match Manager</p>
+                <p className="text-gray-400 text-xs hidden sm:block">School &amp; Event Match Manager</p>
               </div>
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
               {/* Live / Syncing / Local badge */}
               {isConfigured ? (
-                <span className={`text-xs font-bold px-2.5 py-1 rounded-full transition-colors ${
+                <span className={`text-xs font-bold px-2 sm:px-2.5 py-1 rounded-full transition-colors ${
                   syncing
                     ? 'bg-amber-100 text-amber-700'
                     : 'bg-green-100 text-green-700'
                 }`}>
-                  {syncing ? '⟳ Syncing…' : '● Live'}
+                  {syncing ? '⟳' : '●'}<span className="hidden sm:inline"> {syncing ? 'Syncing…' : 'Live'}</span>
                 </span>
               ) : (
-                <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-gray-100 text-gray-400">
-                  Local only
+                <span className="text-xs font-bold px-2 sm:px-2.5 py-1 rounded-full bg-gray-100 text-gray-400">
+                  <span className="sm:hidden">Local</span>
+                  <span className="hidden sm:inline">Local only</span>
                 </span>
               )}
 
-              {/* Stats — desktop */}
+              {/* Stats — desktop only */}
               {ready && matches.length > 0 && (
                 <div className="hidden sm:flex items-center gap-3 text-xs text-gray-500 border-l border-gray-200 pl-3">
                   <span>{stats.total} matches</span>
@@ -128,26 +129,33 @@ export default function App() {
             </div>
           </div>
 
-          {/* Tab nav + Add */}
+          {/* Tab nav + Add (desktop) */}
           <div className="flex items-center justify-between -mb-px">
             <div className="flex">
               {(['list', 'calendar'] as const).map(tab => (
                 <button
                   key={tab}
                   onClick={() => switchTab(tab)}
-                  className={`px-4 py-3 text-sm font-bold border-b-2 transition-colors ${
+                  className={`px-3 sm:px-4 py-3 text-sm font-bold border-b-2 transition-colors ${
                     !formOpen && mainView === tab
                       ? 'border-indigo-600 text-indigo-600'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-200'
                   }`}
                 >
-                  {tab === 'list' ? 'Schedule List' : 'Calendar View'}
+                  {/* Shorter label on mobile */}
+                  <span className="sm:hidden">
+                    {tab === 'list' ? 'List' : 'Calendar'}
+                  </span>
+                  <span className="hidden sm:inline">
+                    {tab === 'list' ? 'Schedule List' : 'Calendar View'}
+                  </span>
                 </button>
               ))}
             </div>
+            {/* Add button — desktop only; FAB handles mobile */}
             <button
               onClick={openAdd}
-              className="my-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-sm font-bold rounded-xl transition-colors shadow-sm"
+              className="hidden sm:block my-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-sm font-bold rounded-xl transition-colors shadow-sm"
             >
               + Add Schedule
             </button>
@@ -156,7 +164,7 @@ export default function App() {
       </header>
 
       {/* ── Main ── */}
-      <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-6">
+      <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-5 pb-24 sm:pb-6">
 
         {!ready ? (
           <div className="flex items-center justify-center py-24">
@@ -178,7 +186,7 @@ export default function App() {
         ) : (
           <>
             {/* Search + Filter */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 mb-5">
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-3 sm:p-4 mb-4">
               <input
                 type="text"
                 placeholder="Search by team, sport, venue, or date…"
@@ -186,12 +194,13 @@ export default function App() {
                 onChange={e => setSearch(e.target.value)}
                 className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent mb-3"
               />
-              <div className="flex flex-wrap gap-2">
+              {/* Filter chips — horizontally scrollable on mobile */}
+              <div className="flex gap-2 overflow-x-auto pb-0.5 scrollbar-none">
                 {FILTER_OPTIONS.map(({ value, label }) => (
                   <button
                     key={value}
                     onClick={() => setFilter(value)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap shrink-0 ${
                       filter === value
                         ? 'bg-indigo-600 text-white shadow-sm'
                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -206,7 +215,6 @@ export default function App() {
             {/* Toolbar */}
             <div className="flex items-center justify-between mb-4">
               <p className="text-sm text-gray-500">
-                Showing{' '}
                 <span className="font-bold text-gray-700">{filtered.length}</span>
                 {(filter !== 'All' || search) ? ` of ${matches.length}` : ''}{' '}
                 match{filtered.length !== 1 ? 'es' : ''}
@@ -233,7 +241,18 @@ export default function App() {
         )}
       </main>
 
-      <footer className="text-center text-gray-400 text-xs py-5 border-t border-gray-100">
+      {/* ── FAB — mobile only, when not in form ── */}
+      {!formOpen && (
+        <button
+          onClick={openAdd}
+          className="sm:hidden fixed bottom-5 right-5 z-20 w-14 h-14 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-3xl rounded-full shadow-xl flex items-center justify-center transition-colors"
+          aria-label="Add Schedule"
+        >
+          +
+        </button>
+      )}
+
+      <footer className="text-center text-gray-400 text-xs py-4 border-t border-gray-100">
         Sports Tournament Schedule Manager &mdash;{' '}
         {isConfigured ? 'Powered by Firebase Realtime Database' : 'Data saved in your browser'}
       </footer>

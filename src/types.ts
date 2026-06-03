@@ -1,5 +1,5 @@
 export type Sport = 'Volleyball' | 'Football'
-export type Category = 'Boys' | 'Girls'
+export type Category = 'Male' | 'Female'
 
 export interface Match {
   id: number
@@ -13,4 +13,4 @@ export interface Match {
   notes: string
 }
 
-export type FilterOption = 'All' | 'Volleyball Boys' | 'Volleyball Girls' | 'Football Boys' | 'Football Girls'
+export type FilterOption = 'All' | 'Volleyball Male' | 'Volleyball Female' | 'Football Male' | 'Football Female'
