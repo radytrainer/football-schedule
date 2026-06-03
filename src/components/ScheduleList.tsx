@@ -114,16 +114,7 @@ export default function ScheduleList({ matches, onEdit, onDelete, onAddNew, admi
                     </span>
                   </td>
                   <td className="px-4 py-3.5">
-                    {adminMode ? (
-                      <ActionMenu onEdit={() => onEdit(m)} onDelete={() => handleDelete(m)} />
-                    ) : (
-                      <button
-                        onClick={() => onEdit(m)}
-                        className="px-3 py-1.5 text-xs font-bold text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                      >
-                        Edit
-                      </button>
-                    )}
+                    <ActionMenu onEdit={() => onEdit(m)} onDelete={() => handleDelete(m)} showDelete={adminMode} />
                   </td>
                 </tr>
               ))}
@@ -150,16 +141,7 @@ export default function ScheduleList({ matches, onEdit, onDelete, onAddNew, admi
                   </span>
                 )}
               </div>
-              {adminMode ? (
-                <ActionMenu onEdit={() => onEdit(m)} onDelete={() => handleDelete(m)} />
-              ) : (
-                <button
-                  onClick={() => onEdit(m)}
-                  className="px-3 py-1.5 text-xs font-bold text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors shrink-0"
-                >
-                  Edit
-                </button>
-              )}
+              <ActionMenu onEdit={() => onEdit(m)} onDelete={() => handleDelete(m)} showDelete={adminMode} />
             </div>
             <p className="font-bold text-gray-900 text-base">
               {m.teamA} <span className="font-normal text-gray-400 text-sm">vs</span> {m.teamB}

@@ -3,9 +3,10 @@ import { useState, useEffect, useRef } from 'react'
 interface Props {
   onEdit: () => void
   onDelete: () => void
+  showDelete: boolean
 }
 
-export default function ActionMenu({ onEdit, onDelete }: Props) {
+export default function ActionMenu({ onEdit, onDelete, showDelete }: Props) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -38,13 +39,17 @@ export default function ActionMenu({ onEdit, onDelete }: Props) {
           >
             Edit
           </button>
-          <div className="h-px bg-gray-100 mx-3" />
-          <button
-            onClick={() => { onDelete(); setOpen(false) }}
-            className="w-full text-left px-4 py-2.5 text-sm font-medium text-rose-600 hover:bg-rose-50 transition-colors"
-          >
-            Delete
-          </button>
+          {showDelete && (
+            <>
+              <div className="h-px bg-gray-100 mx-3" />
+              <button
+                onClick={() => { onDelete(); setOpen(false) }}
+                className="w-full text-left px-4 py-2.5 text-sm font-medium text-rose-600 hover:bg-rose-50 transition-colors"
+              >
+                Delete
+              </button>
+            </>
+          )}
         </div>
       )}
     </div>
