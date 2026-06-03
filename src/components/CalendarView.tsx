@@ -120,10 +120,16 @@ export default function CalendarView({ matches, onAddNew, adminMode }: Props) {
                       <span className="font-normal text-gray-400 text-sm mx-2">vs</span>
                       {m.teamB}
                     </p>
-                    <p className="text-gray-400 text-xs mt-1">📍 {m.place}</p>
-                    {m.notes && (
-                      <p className="text-gray-400 text-xs mt-1 italic">💬 {m.notes}</p>
-                    )}
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                        📍 {m.place}
+                      </span>
+                      {m.notes && (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs bg-gray-100 text-gray-500 italic">
+                          💬 {m.notes}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}

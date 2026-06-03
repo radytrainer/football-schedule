@@ -107,7 +107,12 @@ export default function ScheduleList({ matches, onEdit, onDelete, onAddNew, admi
                   </td>
                   <td className="px-4 py-3.5 font-bold text-gray-800">{m.teamA}</td>
                   <td className="px-4 py-3.5 font-bold text-gray-800">{m.teamB}</td>
-                  <td className="px-4 py-3.5 text-gray-500 max-w-[120px] truncate">{m.place}</td>
+                  <td className="px-4 py-3.5">
+                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200 max-w-[140px]">
+                      <span className="shrink-0">📍</span>
+                      <span className="truncate">{m.place}</span>
+                    </span>
+                  </td>
                   <td className="px-4 py-3.5">
                     {adminMode ? (
                       <ActionMenu onEdit={() => onEdit(m)} onDelete={() => handleDelete(m)} />
@@ -159,10 +164,16 @@ export default function ScheduleList({ matches, onEdit, onDelete, onAddNew, admi
             <p className="font-bold text-gray-900 text-base">
               {m.teamA} <span className="font-normal text-gray-400 text-sm">vs</span> {m.teamB}
             </p>
-            <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5 text-sm text-gray-500">
-              <span>{formatDate(m.date)}</span>
-              <span>{formatTime(m.time)}</span>
-              <span>📍 {m.place}</span>
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold bg-gray-100 text-gray-600">
+                📅 {formatDate(m.date)}
+              </span>
+              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold bg-indigo-50 text-indigo-600">
+                🕐 {formatTime(m.time)}
+              </span>
+              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                📍 {m.place}
+              </span>
             </div>
             {m.notes && (
               <p className="mt-2 text-xs text-gray-400 italic border-t border-gray-100 pt-2">{m.notes}</p>
