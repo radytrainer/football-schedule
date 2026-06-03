@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react'
 import { ref as dbRef, onValue, set as dbSet } from 'firebase/database'
 import type { Match, Category } from './types'
 import { db, isConfigured } from './firebase'
+import { DEFAULT_POOLS } from './constants'
 
 const STORAGE_KEY = 'sport_schedules'
 const DB_PATH = 'schedules'
 
-// One-time migration: convert old "Boys"/"Girls" values to "Male"/"Female"
+type RawMatch = Omit<Match, 'category' | 'pool'> & { category: string; pool?: string }
+
 function migrateCategory(raw: string): Category {
   if (raw === 'Boys') return 'Male'
   if (raw === 'Girls') return 'Female'
@@ -14,7 +16,11 @@ function migrateCategory(raw: string): Category {
 }
 
 function migrateMatches(raw: unknown[]): Match[] {
-  return (raw as Match[]).map(m => ({ ...m, category: migrateCategory(m.category) }))
+  return (raw as RawMatch[]).map(m => {
+    const category = migrateCategory(m.category)
+    const pool = m.pool ?? DEFAULT_POOLS[`${m.sport} ${category}`] ?? ''
+    return { ...m, category, pool }
+  })
 }
 
 export function useSchedules() {
@@ -29,17 +35,19 @@ export function useSchedules() {
       const unsubscribe = onValue(
         schedulesRef,
         snapshot => {
-          const val = snapshot.val() as Record<string, Match> | null
-          const raw = val ? Object.values(val).sort((a, b) => a.id - b.id) : []
+          const val = snapshot.val() as Record<string, RawMatch> | null
+          const raw = val ? Object.values(val).sort((a, b) => (a.id ?? 0) - (b.id ?? 0)) : []
           const loaded = migrateMatches(raw)
 
           setMatches(loaded)
           localStorage.setItem(STORAGE_KEY, JSON.stringify(loaded))
           setReady(true)
 
-          // Write migrated data back if any records were changed
-          const hadOldValues = raw.some(m => m.category === ('Boys' as string) || m.category === ('Girls' as string))
-          if (hadOldValues) {
+          // Write migrated data back if any records needed migration
+          const needsMigration = raw.some(
+            m => m.category === 'Boys' || m.category === 'Girls' || !m.pool
+          )
+          if (needsMigration) {
             const obj = loaded.reduce<Record<string, Match>>((acc, m) => {
               acc[String(m.id)] = m
               return acc

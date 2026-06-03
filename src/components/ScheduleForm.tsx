@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { Match, Sport, Category } from '../types'
+import { DEFAULT_POOLS } from '../constants'
 
 interface Props {
   initial: Match | null
@@ -16,6 +17,7 @@ const CATEGORY_ICONS: Record<Category, string> = { Male: '👨', Female: '👩' 
 export default function ScheduleForm({ initial, onSubmit, onCancel }: Props) {
   const [sport, setSport]       = useState<Sport>(initial?.sport ?? 'Volleyball')
   const [category, setCategory] = useState<Category>(initial?.category ?? 'Male')
+  const [pool, setPool]         = useState(initial?.pool ?? DEFAULT_POOLS['Volleyball Male'] ?? '')
   const [date, setDate]         = useState(initial?.date ?? '')
   const [time, setTime]         = useState(initial?.time ?? '')
   const [teamA, setTeamA]       = useState(initial?.teamA ?? '')
@@ -23,6 +25,13 @@ export default function ScheduleForm({ initial, onSubmit, onCancel }: Props) {
   const [place, setPlace]       = useState(initial?.place ?? '')
   const [notes, setNotes]       = useState(initial?.notes ?? '')
   const [errors, setErrors]     = useState<Record<string, string>>({})
+
+  // Auto-fill pool when sport or category changes (new matches only)
+  useEffect(() => {
+    if (initial !== null) return
+    const defaultPool = DEFAULT_POOLS[`${sport} ${category}`]
+    if (defaultPool) setPool(defaultPool)
+  }, [sport, category, initial])
 
   function clearError(key: string) {
     setErrors(prev => ({ ...prev, [key]: '' }))
@@ -45,7 +54,7 @@ export default function ScheduleForm({ initial, onSubmit, onCancel }: Props) {
     const errs = validate()
     if (Object.keys(errs).length > 0) { setErrors(errs); return }
     onSubmit({
-      sport, category, date, time,
+      sport, category, pool, date, time,
       teamA: teamA.trim(), teamB: teamB.trim(),
       place: place.trim(), notes: notes.trim(),
     })
@@ -56,7 +65,6 @@ export default function ScheduleForm({ initial, onSubmit, onCancel }: Props) {
   return (
     <div className="max-w-2xl mx-auto">
 
-      {/* Back breadcrumb */}
       <button
         onClick={onCancel}
         className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 mb-4 transition-colors"
@@ -66,7 +74,6 @@ export default function ScheduleForm({ initial, onSubmit, onCancel }: Props) {
 
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
 
-        {/* Form header */}
         <div className="px-5 sm:px-6 py-4 sm:py-5 border-b border-gray-100">
           <h2 className="text-base sm:text-lg font-bold text-gray-900">
             {isEdit ? 'Edit Match Schedule' : 'Add New Match Schedule'}
@@ -84,14 +91,9 @@ export default function ScheduleForm({ initial, onSubmit, onCancel }: Props) {
               </label>
               <div className="flex gap-2">
                 {SPORTS.map(s => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => setSport(s)}
+                  <button key={s} type="button" onClick={() => setSport(s)}
                     className={`flex-1 py-2.5 px-1 rounded-xl border-2 text-sm font-bold transition-all text-center ${
-                      sport === s
-                        ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
-                        : 'border-gray-200 hover:border-gray-300 text-gray-500'
+                      sport === s ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-gray-200 hover:border-gray-300 text-gray-500'
                     }`}
                   >
                     <div>{SPORT_ICONS[s]}</div>
@@ -106,14 +108,9 @@ export default function ScheduleForm({ initial, onSubmit, onCancel }: Props) {
               </label>
               <div className="flex gap-2">
                 {CATEGORIES.map(c => (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => setCategory(c)}
+                  <button key={c} type="button" onClick={() => setCategory(c)}
                     className={`flex-1 py-2.5 px-1 rounded-xl border-2 text-sm font-bold transition-all text-center ${
-                      category === c
-                        ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
-                        : 'border-gray-200 hover:border-gray-300 text-gray-500'
+                      category === c ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-gray-200 hover:border-gray-300 text-gray-500'
                     }`}
                   >
                     <div>{CATEGORY_ICONS[c]}</div>
@@ -124,15 +121,28 @@ export default function ScheduleForm({ initial, onSubmit, onCancel }: Props) {
             </div>
           </div>
 
-          {/* Date + Time — stack on mobile */}
+          {/* Pool — auto-filled, editable */}
+          <div>
+            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">
+              Pool
+            </label>
+            <input
+              type="text"
+              value={pool}
+              onChange={e => setPool(e.target.value)}
+              placeholder="e.g. Pool A"
+              className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
+            />
+            <p className="text-xs text-gray-400 mt-1">Auto-filled based on sport &amp; category. You can edit if needed.</p>
+          </div>
+
+          {/* Date + Time */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
               <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">
                 Date <span className="text-rose-400">*</span>
               </label>
-              <input
-                type="date"
-                value={date}
+              <input type="date" value={date}
                 onChange={e => { setDate(e.target.value); clearError('date') }}
                 className={`w-full border rounded-xl px-3 py-3 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-colors ${
                   errors.date ? 'border-rose-400 bg-rose-50' : 'border-gray-200'
@@ -144,9 +154,7 @@ export default function ScheduleForm({ initial, onSubmit, onCancel }: Props) {
               <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">
                 Time <span className="text-rose-400">*</span>
               </label>
-              <input
-                type="time"
-                value={time}
+              <input type="time" value={time}
                 onChange={e => { setTime(e.target.value); clearError('time') }}
                 className={`w-full border rounded-xl px-3 py-3 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-colors ${
                   errors.time ? 'border-rose-400 bg-rose-50' : 'border-gray-200'
@@ -156,16 +164,13 @@ export default function ScheduleForm({ initial, onSubmit, onCancel }: Props) {
             </div>
           </div>
 
-          {/* Team A + Team B — stack on mobile */}
+          {/* Team A + Team B */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
               <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">
                 Team A <span className="text-rose-400">*</span>
               </label>
-              <input
-                type="text"
-                placeholder="e.g. Grade 12A"
-                value={teamA}
+              <input type="text" placeholder="e.g. Grade 12A" value={teamA}
                 onChange={e => { setTeamA(e.target.value); clearError('teamA') }}
                 className={`w-full border rounded-xl px-3 py-3 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-colors ${
                   errors.teamA ? 'border-rose-400 bg-rose-50' : 'border-gray-200'
@@ -177,10 +182,7 @@ export default function ScheduleForm({ initial, onSubmit, onCancel }: Props) {
               <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">
                 Team B <span className="text-rose-400">*</span>
               </label>
-              <input
-                type="text"
-                placeholder="e.g. Grade 12B"
-                value={teamB}
+              <input type="text" placeholder="e.g. Grade 12B" value={teamB}
                 onChange={e => { setTeamB(e.target.value); clearError('teamB') }}
                 className={`w-full border rounded-xl px-3 py-3 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-colors ${
                   errors.teamB ? 'border-rose-400 bg-rose-50' : 'border-gray-200'
@@ -195,10 +197,7 @@ export default function ScheduleForm({ initial, onSubmit, onCancel }: Props) {
             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">
               Venue / Place <span className="text-rose-400">*</span>
             </label>
-            <input
-              type="text"
-              placeholder="e.g. School Court"
-              value={place}
+            <input type="text" placeholder="e.g. School Court" value={place}
               onChange={e => { setPlace(e.target.value); clearError('place') }}
               className={`w-full border rounded-xl px-3 py-3 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-colors ${
                 errors.place ? 'border-rose-400 bg-rose-50' : 'border-gray-200'
@@ -212,21 +211,19 @@ export default function ScheduleForm({ initial, onSubmit, onCancel }: Props) {
             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">
               Notes <span className="text-gray-400 font-normal normal-case">(optional)</span>
             </label>
-            <textarea
-              placeholder="Any additional notes…"
-              value={notes}
-              onChange={e => setNotes(e.target.value)}
-              rows={3}
-              className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent resize-none transition-colors"
+            <textarea placeholder="Any additional notes…" value={notes}
+              onChange={e => setNotes(e.target.value)} rows={3}
+              className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent resize-none"
             />
           </div>
 
-          {/* Live preview */}
+          {/* Preview */}
           {(teamA || teamB) && (
             <div className="rounded-xl bg-indigo-50 border border-indigo-100 px-4 py-3">
               <p className="text-xs font-bold text-indigo-400 uppercase tracking-wide mb-1.5">Preview</p>
               <p className="text-sm font-bold text-gray-700 mb-0.5">
                 {SPORT_ICONS[sport]} {sport} — {category}
+                {pool && <span className="ml-2 text-xs font-bold text-indigo-500 bg-indigo-100 px-2 py-0.5 rounded-full">{pool}</span>}
               </p>
               <p className="text-base font-bold text-gray-900">
                 {teamA || '—'} <span className="font-normal text-gray-400 text-sm">vs</span> {teamB || '—'}
@@ -241,15 +238,12 @@ export default function ScheduleForm({ initial, onSubmit, onCancel }: Props) {
 
           {/* Actions */}
           <div className="flex gap-3 pt-1">
-            <button
-              type="submit"
+            <button type="submit"
               className="flex-1 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-bold py-3 rounded-xl transition-colors shadow-sm"
             >
               {isEdit ? 'Save Changes' : 'Save Schedule'}
             </button>
-            <button
-              type="button"
-              onClick={onCancel}
+            <button type="button" onClick={onCancel}
               className="flex-1 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-bold py-3 rounded-xl transition-colors"
             >
               Cancel

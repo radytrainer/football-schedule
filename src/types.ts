@@ -5,6 +5,7 @@ export interface Match {
   id: number
   sport: Sport
   category: Category
+  pool: string
   date: string
   time: string
   teamA: string

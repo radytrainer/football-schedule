@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import type { Match, FilterOption } from './types'
 import { useSchedules } from './useSchedules'
 import { isConfigured } from './firebase'
@@ -22,6 +22,22 @@ export default function App() {
   const [search, setSearch]             = useState('')
   const [filter, setFilter]             = useState<FilterOption>('All')
 
+  // Admin mode — triple-click the logo to toggle
+  const [adminMode, setAdminMode] = useState(false)
+  const clickCountRef = useRef(0)
+  const clickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  function handleLogoClick() {
+    clickCountRef.current += 1
+    if (clickTimerRef.current) clearTimeout(clickTimerRef.current)
+    if (clickCountRef.current >= 3) {
+      setAdminMode(prev => !prev)
+      clickCountRef.current = 0
+      return
+    }
+    clickTimerRef.current = setTimeout(() => { clickCountRef.current = 0 }, 1200)
+  }
+
   const today = new Date().toISOString().split('T')[0]
 
   const stats = {
@@ -40,7 +56,8 @@ export default function App() {
       m.teamB.toLowerCase().includes(q) ||
       m.sport.toLowerCase().includes(q) ||
       m.date.includes(q) ||
-      m.place.toLowerCase().includes(q)
+      m.place.toLowerCase().includes(q) ||
+      m.pool.toLowerCase().includes(q)
     return byFilter && bySearch
   })
 
@@ -82,12 +99,19 @@ export default function App() {
       <header className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
         <div className="max-w-6xl mx-auto px-4">
 
-          {/* Top row: logo + badge + stats */}
+          {/* Top row */}
           <div className="flex items-center justify-between py-3 gap-3">
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-base sm:text-lg shadow-sm shrink-0">
+              {/* Logo — triple-click to toggle admin mode */}
+              <button
+                onClick={handleLogoClick}
+                className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center text-base sm:text-lg shadow-sm shrink-0 transition-colors ${
+                  adminMode ? 'bg-amber-500' : 'bg-indigo-600'
+                }`}
+                aria-label="Logo"
+              >
                 🏆
-              </div>
+              </button>
               <div className="min-w-0">
                 <h1 className="font-bold text-gray-900 text-sm sm:text-base leading-tight truncate">
                   Sports Tournament Schedule
@@ -97,12 +121,17 @@ export default function App() {
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
+              {/* Admin badge */}
+              {adminMode && (
+                <span className="text-xs font-bold px-2 py-1 rounded-full bg-amber-100 text-amber-700">
+                  Admin
+                </span>
+              )}
+
               {/* Live / Syncing / Local badge */}
               {isConfigured ? (
                 <span className={`text-xs font-bold px-2 sm:px-2.5 py-1 rounded-full transition-colors ${
-                  syncing
-                    ? 'bg-amber-100 text-amber-700'
-                    : 'bg-green-100 text-green-700'
+                  syncing ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'
                 }`}>
                   {syncing ? '⟳' : '●'}<span className="hidden sm:inline"> {syncing ? 'Syncing…' : 'Live'}</span>
                 </span>
@@ -129,7 +158,7 @@ export default function App() {
             </div>
           </div>
 
-          {/* Tab nav + Add (desktop) */}
+          {/* Tab nav + Add (admin: desktop) */}
           <div className="flex items-center justify-between -mb-px">
             <div className="flex">
               {(['list', 'calendar'] as const).map(tab => (
@@ -142,23 +171,19 @@ export default function App() {
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-200'
                   }`}
                 >
-                  {/* Shorter label on mobile */}
-                  <span className="sm:hidden">
-                    {tab === 'list' ? 'List' : 'Calendar'}
-                  </span>
-                  <span className="hidden sm:inline">
-                    {tab === 'list' ? 'Schedule List' : 'Calendar View'}
-                  </span>
+                  <span className="sm:hidden">{tab === 'list' ? 'List' : 'Calendar'}</span>
+                  <span className="hidden sm:inline">{tab === 'list' ? 'Schedule List' : 'Calendar View'}</span>
                 </button>
               ))}
             </div>
-            {/* Add button — desktop only; FAB handles mobile */}
-            <button
-              onClick={openAdd}
-              className="hidden sm:block my-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-sm font-bold rounded-xl transition-colors shadow-sm"
-            >
-              + Add Schedule
-            </button>
+            {adminMode && (
+              <button
+                onClick={openAdd}
+                className="hidden sm:block my-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-sm font-bold rounded-xl transition-colors shadow-sm"
+              >
+                + Add Schedule
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -189,12 +214,11 @@ export default function App() {
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-3 sm:p-4 mb-4">
               <input
                 type="text"
-                placeholder="Search by team, sport, venue, or date…"
+                placeholder="Search by team, sport, pool, venue, or date…"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent mb-3"
               />
-              {/* Filter chips — horizontally scrollable on mobile */}
               <div className="flex gap-2 overflow-x-auto pb-0.5 scrollbar-none">
                 {FILTER_OPTIONS.map(({ value, label }) => (
                   <button
@@ -233,16 +257,21 @@ export default function App() {
                 onEdit={openEdit}
                 onDelete={deleteMatch}
                 onAddNew={openAdd}
+                adminMode={adminMode}
               />
             ) : (
-              <CalendarView matches={filtered} onAddNew={openAdd} />
+              <CalendarView
+                matches={filtered}
+                onAddNew={openAdd}
+                adminMode={adminMode}
+              />
             )}
           </>
         )}
       </main>
 
-      {/* ── FAB — mobile only, when not in form ── */}
-      {!formOpen && (
+      {/* FAB — admin + mobile only */}
+      {adminMode && !formOpen && (
         <button
           onClick={openAdd}
           className="sm:hidden fixed bottom-5 right-5 z-20 w-14 h-14 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-3xl rounded-full shadow-xl flex items-center justify-center transition-colors"
